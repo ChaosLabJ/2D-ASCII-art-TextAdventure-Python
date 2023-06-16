@@ -1,5 +1,6 @@
 # Game by ChaosLabJ
 coords={}
+player={}
 won=False
 
 def intro():
@@ -75,6 +76,7 @@ def loadTutorial():
 
 def loadMap(height, building):
     spacePreset=[""]
+    coords["z"]=height
     if(building=="home"):
         if(height==0):
             spacePreset="@ # # # * # # # # # @,= = = : + + + + + @ @,= = = : + + + + + @ @,= = = : + + + + + @ @,= = = : + + + + + @ @,+ + + : + + + + + @ @,+ x · · · · · * + @ @,+ x · · · · · ~ + @ @,+ > > · · ~ & ~ + @ @,# # # # # # # # # @ @"
@@ -94,7 +96,6 @@ def loadMap(height, building):
         for l in range(len(spacePresetX)+1):
             x = {l:[]}
             symbol=str(spacePresetX[i].split()[l])
-            print(spacePreset[l])
             space.append(symbol)
             coords["y"][i][l]=symbol
         space.append("\n")
@@ -118,6 +119,8 @@ def passable(Symbol):
         return True
     elif(Symbol=="·"):
         return True
+    elif(Symbol=="<"or Symbol==">"):
+        return True
     else:
         return False
 
@@ -126,8 +129,6 @@ def interActable(Symbol):
         return True
     elif(Symbol=="["or Symbol=="]"):
         return True
-    elif(Symbol=="<"or Symbol==">"):
-        return True
     elif(Symbol=="~"):
         return True
     elif(Symbol=="?"):
@@ -138,16 +139,35 @@ def interActable(Symbol):
         return True
     else:
         return False
-    
+
+def items(container,posY,posX):
+    if(container=="freezer"):
+        if(posY==6 and posX==7):
+            return ""
+    return "nothing"
+
 def event(Symbol,posY,posX):
     if(Symbol=="*"):
-        print("FREEZER")
+        container="fridge"
+        if(posY==6 and posX==7):
+            print("It's your fridge and contains the following items:")
+            itemList=(items(container,posY,posX))
+            if(itemList!="nothing"):
+                print("")
+        elif(posY==3 and posX==7):
+            print("This fridge contains the following items:")
+            print(items(container,posY,posX))
     elif(Symbol=="["or Symbol=="]"):
-        print("BED")
-    elif(Symbol=="<"or Symbol==">"):
-        print("STAIRS")
+        if(posY==7 and posX==6 or posX==7 or posY==8 and posX==6 or posX==7):
+            if(input("This is your bed. Do you want to rest now?\n")=="y"):
+                rest()
+        if(posY==2 and posX==1 or posX==2):
+            if(input("It's an empty bed. Do you want to rest now?\n")=="y"):
+                rest()
     elif(Symbol=="~"):
-        print("SURFACE")
+        container="surface"
+        if(posY==6 and posX==7):
+            print(items(container,posY,posX))
     elif(Symbol=="?"):
         print("SPECIAL")
     elif(Symbol=="&"):
@@ -155,11 +175,16 @@ def event(Symbol,posY,posX):
     elif(Symbol=="x"):
         print("CHEST")
 
+def rest():
+    print("You're rested now.")
+
 def movement(startY,startX):
     oldSymbol=coords["y"][startY][startX]
     coords["y"][startY][startX]="$"
+    transitionCoords="8/1,4/3,0/4"
     lastY=startY
     lastX=startX
+    print(" ".join(renderSpace()))
     while(won!=True):
         moveUser=str(input())   
         if(moveUser.isalpha()): 
@@ -169,8 +194,6 @@ def movement(startY,startX):
                     lastY-=1
                     oldSymbol=coords["y"][lastY][lastX]
                     coords["y"][lastY][lastX]="$"
-                    print(" ".join(renderSpace()))
-                    print(lastY,lastX)
                 elif(interActable(coords["y"][lastY-1][lastX])):
                     event(coords["y"][lastY-1][lastX],lastY,lastX)
             elif(moveUser=="a"):
@@ -179,8 +202,6 @@ def movement(startY,startX):
                     lastX-=1
                     oldSymbol=coords["y"][lastY][lastX]
                     coords["y"][lastY][lastX]="$"
-                    print(" ".join(renderSpace()))
-                    print(lastY,lastX)
                 elif(interActable(coords["y"][lastY][lastX-1])):
                     event(coords["y"][lastY-1][lastX],lastY,lastX)
             elif(moveUser=="d"):
@@ -189,8 +210,6 @@ def movement(startY,startX):
                     lastX+=1
                     oldSymbol=coords["y"][lastY][lastX]
                     coords["y"][lastY][lastX]="$"
-                    print(" ".join(renderSpace()))
-                    print(lastY,lastX)
                 elif(interActable(coords["y"][lastY][lastX+1])):
                     event(coords["y"][lastY-1][lastX],lastY,lastX)
             elif(moveUser=="s"):
@@ -199,10 +218,21 @@ def movement(startY,startX):
                     lastY+=1
                     oldSymbol=coords["y"][lastY][lastX]
                     coords["y"][lastY][lastX]="$"
-                    print(" ".join(renderSpace()))
-                    print(lastY,lastX)
                 elif(interActable(coords["y"][lastY+1][lastX])):
                     event(coords["y"][lastY-1][lastX],lastY,lastX)
+            lastCoords=str(lastY)+"/"+str(lastX)
+            if(lastCoords in transitionCoords.split(",")):
+                if(lastCoords=="8/1" and coords["z"]==0):
+                    loadMap(1,"home")
+                elif(lastCoords=="8/1" and coords["z"]==1):
+                    loadMap(0,"home")
+                elif(lastCoords=="4/3" and coords["z"]==0):
+                    loadMap(2,"home")
+                elif(lastCoords=="4/3" and coords["z"]==2):
+                    loadMap(0,"home")
+                elif(lastCoords=="0/4" and coords["z"]==2):
+                    loadMap(2,"house1")
+            print(" ".join(renderSpace()))
 
 def game():
     loadMap(0,"home")
